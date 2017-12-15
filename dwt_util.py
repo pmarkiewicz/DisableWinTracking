@@ -22,7 +22,7 @@ import pywintypes
 import shutil
 import subprocess
 import tempfile
-import _winreg as winreg
+import winreg
 import shlex
 
 import win32serviceutil
@@ -42,6 +42,7 @@ class CalledProcessError(Exception):
         The exit status will be stored in the returncode attribute;
         check_output() will also store the output in the output attribute.
     """
+
     def __init__(self, returncode, cmd, output=None, stderr=None):
         self.returncode = returncode
         self.cmd = cmd
@@ -49,7 +50,8 @@ class CalledProcessError(Exception):
         self.stderr = stderr
 
     def __str__(self):
-        return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+        return "Command '%s' returned non-zero exit status %d" % (
+            self.cmd, self.returncode)
 
     @property
     def stdout(self):
@@ -70,119 +72,165 @@ def is_64bit():
 
 def ip_block(ip_list, undo):
     for ip in ip_list:
-        cmd = 'netsh advfirewall firewall {act} rule name="TrackingIP-{ip}"'.format(act='delete' if undo else 'add',
-                                                                                    ip=ip)
+        cmd = 'netsh advfirewall firewall {act} rule name="TrackingIP-{ip}"'.format(
+            act='delete' if undo else 'add', ip=ip)
         if not undo:
-            cmd += ' dir=out protocol=any remoteip="{ip}" profile=any action=block'.format(ip=ip)
+            cmd += ' dir=out protocol=any remoteip="{ip}" profile=any action=block'.format(
+                ip=ip)
 
         try:
             subprocess_handler(shlex.split(cmd))
-            logger.info("IP Blocker: The IP {ip} was successfully blocked.".format(ip=ip))
+            logger.info(
+                "IP Blocker: The IP {ip} was successfully blocked.".format(
+                    ip=ip))
         except CalledProcessError as e:
-            logger.exception("IP Blocker: Failed to block IP {ip}".format(ip=ip))
-            logger.critical("IP Blocker: Error output:\n" + e.stdout.decode('ascii', 'replace'))
+            logger.exception(
+                "IP Blocker: Failed to block IP {ip}".format(ip=ip))
+            logger.critical("IP Blocker: Error output:\n" +
+                            e.stdout.decode('ascii', 'replace'))
 
 
 def clear_diagtrack():
-	file = os.path.join(os.environ['SYSTEMDRIVE'], ('\\ProgramData\\Microsoft\\Diagnosis\\ETLLogs\\AutoLogger\\AutoLogger-Diagtrack-Listener.etl'))
-
-	'''
+    file = os.path.join(os.environ['SYSTEMDRIVE'], (
+        '\\ProgramData\\Microsoft\\Diagnosis\\ETLLogs\\AutoLogger\\AutoLogger-Diagtrack-Listener.etl'
+    ))
+    '''
 	This is an ORDERED dictionary. It will always run in order, not subject to the devastation
 	of a standard dictionary, so no worries.
 	'''
-	cmds = OrderedDict()
-	cmds["takeown /f {0}".format(file)]="Take Ownership"
-	cmds["icacls {0} /grant administrators:F".format(file)]="Grant Admin Privilege"
-	cmds["icacls {0} /inheritance:r /deny SYSTEM:F /grant Administrators:F".format(file)]="Deny System Privilege"
+    cmds = OrderedDict()
+    cmds["takeown /f {0}".format(file)] = "Take Ownership"
+    cmds["icacls {0} /grant administrators:F".format(
+        file)] = "Grant Admin Privilege"
+    cmds["icacls {0} /inheritance:r /deny SYSTEM:F /grant Administrators:F".
+         format(file)] = "Deny System Privilege"
 
-	i = 0
+    i = 0
 
-	for x, y in cmds.iteritems():
-		i += 1
-		
-		if i == 3:
-			try:
-				open(file, 'w').close()
-				logger.info("DiagTrack: Cleared AutoLogger-Diagtrack-Listener.etl")
-			except:
-				logger.exception("DiagTrack: Couldn't open AutoLogger-Diagtrack-Listener.etl for writing")
+    for x, y in cmds.iteritems():
+        i += 1
 
-		p = subprocess.Popen(x, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-		output = p.communicate()
-		logger.info("DiagTrack: {0} of AutoLogger-Diagtrack-Listener.etl was successful".format(y))
+        if i == 3:
+            try:
+                open(file, 'w').close()
+                logger.info(
+                    "DiagTrack: Cleared AutoLogger-Diagtrack-Listener.etl")
+            except:
+                logger.exception(
+                    "DiagTrack: Couldn't open AutoLogger-Diagtrack-Listener.etl for writing"
+                )
 
-		if p.returncode:
-			logger.exception(p.returncode)
-			
-		if i == 3:
-			logger.info("DiagTrack: Successfully cleared and locked DiagTrack log.")
+        p = subprocess.Popen(
+            x,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE)
+        output = p.communicate()
+        logger.info(
+            "DiagTrack: {0} of AutoLogger-Diagtrack-Listener.etl was successful".
+            format(y))
+
+        if p.returncode:
+            logger.exception(p.returncode)
+
+        if i == 3:
+            logger.info(
+                "DiagTrack: Successfully cleared and locked DiagTrack log.")
+
 
 def delete_service(service):
     try:
         win32serviceutil.RemoveService(service)
-        logger.info("Services: Succesfully removed service '{service}'".format(service=service))
+        logger.info("Services: Succesfully removed service '{service}'".format(
+            service=service))
     except pywintypes.error as e:
-        errors = (winerror.ERROR_SERVICE_DOES_NOT_EXIST, winerror.ERROR_SERVICE_NOT_ACTIVE)
+        errors = (winerror.ERROR_SERVICE_DOES_NOT_EXIST,
+                  winerror.ERROR_SERVICE_NOT_ACTIVE)
         if not any(error == e.winerror for error in errors):
-            logger.exception("Services: Failed to remove service '{service}'".format(service=service))
+            logger.exception(
+                "Services: Failed to remove service '{service}'".format(
+                    service=service))
 
 
 def disable_service(service):
     try:
         win32serviceutil.StopService(service)
-        logger.info("Services: Succesfully stopped service '{service}'".format(service=service))
+        logger.info("Services: Succesfully stopped service '{service}'".format(
+            service=service))
     except pywintypes.error as e:
-        errors = (winerror.ERROR_SERVICE_DOES_NOT_EXIST, winerror.ERROR_SERVICE_NOT_ACTIVE)
+        errors = (winerror.ERROR_SERVICE_DOES_NOT_EXIST,
+                  winerror.ERROR_SERVICE_NOT_ACTIVE)
         if not any(error == e.winerror for error in errors):
-            logger.exception("Services: Failed to stop service '{service}'".format(service=service))
+            logger.exception(
+                "Services: Failed to stop service '{service}'".format(
+                    service=service))
 
 
 def telemetry(undo):
     value = int(undo)
-    telemetry_keys = {'AllowTelemetry': [winreg.HKEY_LOCAL_MACHINE,
-                                         r'SOFTWARE\Policies\Microsoft\Windows\DataCollection',
-                                         "AllowTelemetry", winreg.REG_DWORD, value]}
+    telemetry_keys = {
+        'AllowTelemetry': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SOFTWARE\Policies\Microsoft\Windows\DataCollection',
+            "AllowTelemetry", winreg.REG_DWORD, value
+        ]
+    }
     set_registry(telemetry_keys)
 
 
 def services(undo):
     value = 4 if undo else 3
-    service_keys = {'dmwappushsvc': [winreg.HKEY_LOCAL_MACHINE,
-                                     r'SYSTEM\\CurrentControlSet\\Services\\dmwappushsvc',
-                                     'Start', winreg.REG_DWORD, value],
-
-                    'DiagTrack': [winreg.HKEY_LOCAL_MACHINE,
-                                  r'SYSTEM\\CurrentControlSet\\Services\\DiagTrack',
-                                  'Start', winreg.REG_DWORD, value]}
+    service_keys = {
+        'dmwappushsvc': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SYSTEM\\CurrentControlSet\\Services\\dmwappushsvc', 'Start',
+            winreg.REG_DWORD, value
+        ],
+        'DiagTrack': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SYSTEM\\CurrentControlSet\\Services\\DiagTrack', 'Start',
+            winreg.REG_DWORD, value
+        ]
+    }
     set_registry(service_keys)
 
 
 def defender(undo):
     value = int(undo)
-    defender_keys = {'Windows Defender Delivery Optimization Download':
-                     [winreg.HKEY_LOCAL_MACHINE,
-                      r'SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config',
-                      'DODownloadMode', winreg.REG_DWORD, value],
-
-                     'Windows Defender Spynet': [winreg.HKEY_LOCAL_MACHINE,
-                                                 r'SOFTWARE\Microsoft\Windows Defender\Spynet',
-                                                 'SpyNetReporting', winreg.REG_DWORD, value],
-
-                     'Windows Defender Sample Submission': [winreg.HKEY_LOCAL_MACHINE,
-                                                            r'SOFTWARE\Microsoft\Windows Defender\Spynet',
-                                                            'SubmitSamplesConsent', winreg.REG_DWORD, value]}
+    defender_keys = {
+        'Windows Defender Delivery Optimization Download': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config',
+            'DODownloadMode', winreg.REG_DWORD, value
+        ],
+        'Windows Defender Spynet': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SOFTWARE\Microsoft\Windows Defender\Spynet', 'SpyNetReporting',
+            winreg.REG_DWORD, value
+        ],
+        'Windows Defender Sample Submission': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SOFTWARE\Microsoft\Windows Defender\Spynet',
+            'SubmitSamplesConsent', winreg.REG_DWORD, value
+        ]
+    }
     set_registry(defender_keys)
 
 
 def wifisense(undo):
     value = int(undo)
-    wifisense_keys = {'WifiSense Credential Share': [winreg.HKEY_LOCAL_MACHINE,
-                                                     r'SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features',
-                                                     'WiFiSenseCredShared', winreg.REG_DWORD, value],
-
-                      'WifiSense Open-ness': [winreg.HKEY_LOCAL_MACHINE,
-                                              r'SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features',
-                                              'WiFiSenseOpen', winreg.REG_DWORD, value]}
+    wifisense_keys = {
+        'WifiSense Credential Share': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features',
+            'WiFiSenseCredShared', winreg.REG_DWORD, value
+        ],
+        'WifiSense Open-ness': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features',
+            'WiFiSenseOpen', winreg.REG_DWORD, value
+        ]
+    }
     set_registry(wifisense_keys)
 
 
@@ -190,47 +238,63 @@ def onedrive(undo):
     file_sync_value = int(undo)
     list_pin_value = int(not undo)
     action = "install" if undo else "uninstall"
-    onedrive_keys = {'FileSync': [winreg.HKEY_LOCAL_MACHINE,
-                                  r'SOFTWARE\Policies\Microsoft\Windows\OneDrive',
-                                  'DisableFileSyncNGSC', winreg.REG_DWORD, file_sync_value],
-
-                     'ListPin': [winreg.HKEY_CLASSES_ROOT,
-                                 r'CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}',
-                                 'System.IsPinnedToNameSpaceTree', winreg.REG_DWORD, list_pin_value]}
+    onedrive_keys = {
+        'FileSync': [
+            winreg.HKEY_LOCAL_MACHINE,
+            r'SOFTWARE\Policies\Microsoft\Windows\OneDrive',
+            'DisableFileSyncNGSC', winreg.REG_DWORD, file_sync_value
+        ],
+        'ListPin': [
+            winreg.HKEY_CLASSES_ROOT,
+            r'CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}',
+            'System.IsPinnedToNameSpaceTree', winreg.REG_DWORD, list_pin_value
+        ]
+    }
 
     set_registry(onedrive_keys)
 
     system = "SysWOW64" if is_64bit() else "System32"
-    onedrive_setup = os.path.join(os.environ['SYSTEMROOT'], "{system}/OneDriveSetup.exe".format(system=system))
+    onedrive_setup = os.path.join(
+        os.environ['SYSTEMROOT'],
+        "{system}/OneDriveSetup.exe".format(system=system))
     cmd = "{bin} /{action}".format(bin=onedrive_setup, action=action)
     try:
-        subprocess.call(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        subprocess.call(
+            shlex.split(cmd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE)
         logger.info("OneDrive: successfully {action}ed".format(action=action))
     except (WindowsError, IOError):
         logger.info("OneDrive: unable to {action}".format(action=action))
 
 
 def set_registry(keys):
-    mask = winreg.KEY_WOW64_64KEY | winreg.KEY_ALL_ACCESS if is_64bit() else winreg.KEY_ALL_ACCESS
+    mask = winreg.KEY_WOW64_64KEY | winreg.KEY_ALL_ACCESS if is_64bit(
+    ) else winreg.KEY_ALL_ACCESS
 
     for key_name, values in keys.items():
         try:
             key = winreg.CreateKeyEx(values[0], values[1], 0, mask)
             winreg.SetValueEx(key, values[2], 0, values[3], values[4])
             winreg.CloseKey(key)
-            logger.info("Registry: Successfully modified {key} key.".format(key=key_name))
+            logger.info("Registry: Successfully modified {key} key.".format(
+                key=key_name))
         except OSError:
-            logger.exception("Registry: Unable to modify {key} key.".format(key=key_name))
+            logger.exception(
+                "Registry: Unable to modify {key} key.".format(key=key_name))
 
 
 def host_file(entries, undo):
     null_ip = "0.0.0.0 "
     nulled_entires = [null_ip + x for x in entries]
-    hosts_path = os.path.join(os.environ['SYSTEMROOT'], 'System32/drivers/etc/hosts')
+    hosts_path = os.path.join(os.environ['SYSTEMROOT'],
+                              'System32/drivers/etc/hosts')
 
     if undo:
         try:
-            with open(hosts_path, 'r') as hosts, tempfile.NamedTemporaryFile(delete=False) as temp:
+            with open(hosts_path, 'r') as hosts, tempfile.NamedTemporaryFile(
+                    delete=False) as temp:
                 for line in hosts:
                     if not any(domain in line for domain in entries):
                         temp.write(line)
@@ -253,28 +317,40 @@ def host_file(entries, undo):
 def app_manager(apps, undo):
     running = {}
     for app in apps:
-        cmd = 'powershell "Get-AppxPackage *{app}*|Remove-AppxPackage"'.format(app=app)
+        cmd = 'powershell "Get-AppxPackage *{app}*|Remove-AppxPackage"'.format(
+            app=app)
         try:
-            process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                       stdin=subprocess.PIPE)
+            process = subprocess.Popen(
+                shlex.split(cmd),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE)
             running[app] = process
         except OSError:
-            logger.exception("App remover: Failed to remove app '{app}'".format(app=app))
+            logger.exception(
+                "App remover: Failed to remove app '{app}'".format(app=app))
 
     for app, process in running.items():
         process.wait()
         if process.returncode:
-            logger.exception("App remover: Failed to remove app '{app}'".format(app=app))
+            logger.exception(
+                "App remover: Failed to remove app '{app}'".format(app=app))
         else:
             logger.info("Successfully removed app '{app}'".format(app=app))
 
 
 def subprocess_handler(cmd):
-	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
-	output = p.communicate()
-	
-	if p.returncode:
-		return p.returncode
+    p = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+        shell=True)
+    output = p.communicate()
+
+    if p.returncode:
+        return p.returncode
+
 
 # Old reinstall code, does not work:
 # if reinstall:

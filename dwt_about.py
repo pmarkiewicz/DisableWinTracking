@@ -18,7 +18,8 @@
 # dwt.py will become cluttered enough :^)
 import cgi
 import json
-import urllib2
+import urllib3
+from urllib import request
 import webbrowser
 from distutils.version import StrictVersion
 
@@ -51,7 +52,8 @@ def about_dialog(parent):
     about_info.SetVersion("v{v}".format(v=__version__))
     about_info.SetCopyright("Copyright (C) 10se1ucgo 2015-2016")
     about_info.SetDescription("A tool to disable tracking in Windows 10")
-    about_info.SetWebSite("https://github.com/10se1ucgo/DisableWinTracking", "GitHub repository")
+    about_info.SetWebSite("https://github.com/10se1ucgo/DisableWinTracking",
+                          "GitHub repository")
     about_info.AddDeveloper("10se1ucgo")
     about_info.AddDeveloper("Ruined1")
     about_info.SetLicense(license_text)
@@ -60,18 +62,26 @@ def about_dialog(parent):
 
 class Licenses(wx.Dialog):
     def __init__(self, parent):
-        super(Licenses, self).__init__(parent, title="Licenses", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        super(Licenses, self).__init__(
+            parent,
+            title="Licenses",
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
         self.scrolled_panel = sp.ScrolledPanel(self)
 
         mono_font = wx.Font()
         mono_font.SetFamily(wx.FONTFAMILY_TELETYPE)
 
-        info = wx.StaticText(self.scrolled_panel, label=("DisableWinTracking uses a number of open source software."
-                                                         "The following are the licenses for these software."))
+        info = wx.StaticText(
+            self.scrolled_panel,
+            label=("DisableWinTracking uses a number of open source software."
+                   "The following are the licenses for these software."))
 
-        wxw = wx.StaticText(self.scrolled_panel, label=("DisableWinTracking uses wxWidgets and wxPython. Their license "
-                                                        "is below\nMore info at https://www.wxwidgets.org/about/"))
+        wxw = wx.StaticText(
+            self.scrolled_panel,
+            label=(
+                "DisableWinTracking uses wxWidgets and wxPython. Their license "
+                "is below\nMore info at https://www.wxwidgets.org/about/"))
         wxw_license = """
                   wxWindows Library Licence, Version 3.1
                   ======================================
@@ -115,7 +125,9 @@ class Licenses(wx.Dialog):
         wxw_text = wx.StaticText(self.scrolled_panel, label=wxw_license)
         wxw_text.SetFont(mono_font)
 
-        pywin = wx.StaticText(self.scrolled_panel, label="DisableWinTracking uses PyWin32. Its license is below.")
+        pywin = wx.StaticText(
+            self.scrolled_panel,
+            label="DisableWinTracking uses PyWin32. Its license is below.")
         pywin_license = """
     Unless stated in the specfic source file, this work is
     Copyright (c) 1996-2008, Greg Stein and Mark Hammond.
@@ -168,19 +180,25 @@ class Licenses(wx.Dialog):
 
 def update_check(parent):
     try:
-        r = urllib2.urlopen('https://api.github.com/repos/10se1ucgo/DisableWinTracking/releases/latest')
-    except urllib2.URLError:
+        r = request.urlopen(
+            'https://api.github.com/repos/10se1ucgo/DisableWinTracking/releases/latest'
+        )
+    except request.URLError:
         return
     value, parameters = cgi.parse_header(r.headers.get('Content-Type', ''))
     release = json.loads(r.read().decode(parameters.get('charset', 'utf-8')))
     if release['prerelease']:
         return
     new = release['tag_name']
-    
+
     try:
         if StrictVersion(__version__) < StrictVersion(new.lstrip('v')):
-            info = wx.MessageDialog(parent, message="DWT {v} is now available!\nGo to download page?".format(v=new),
-                                    caption="DWT Update", style=wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
+            info = wx.MessageDialog(
+                parent,
+                message="DWT {v} is now available!\nGo to download page?".
+                format(v=new),
+                caption="DWT Update",
+                style=wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
             if info.ShowModal() == wx.ID_OK:
                 webbrowser.open_new_tab(release['html_url'])
             info.Destroy()
