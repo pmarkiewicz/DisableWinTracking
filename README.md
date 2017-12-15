@@ -1,3 +1,6 @@
+Updated to run on python 3.x (not compatible with 2.x)
+
+
 # DisableWinTracking
 
 A tool that I created to use some of the known methods of disabling tracking in Windows 10.
@@ -5,32 +8,7 @@ A tool that I created to use some of the known methods of disabling tracking in 
 <!-- ![screenshot](https://i.imgur.com/qfC2elN.png) -->
 ![screenshot](http://i.imgur.com/WINUxAj.png)
 
-## DOWNLOAD
 
-[DOWNLOAD EXE HERE](https://github.com/10se1ucgo/DisableWinTracking/releases/)
-
-**Note:** Windows Defender may report the EXE as a trojan (Win32/Pocyx.C!cl), and may therefore prevent you from extracting the EXE to anywhere on your computer. Set up an exclusion in **Settings > Update & Security > Windows Defender > Exclusions** by adding the folder you intend to extract the EXE to.
-
-## How to Use
-
-You can either:
-
-A. [Run the binary uploaded to the Release tab as an Administrator and select which options you'd like](https://github.com/10se1ucgo/DisableWinTracking/releases/)
-
-B. Install Python and the dependencies listed below and run the script from an elevated command prompt and select which options you'd like  
-
-#### Silent
-
-Either can be run with the -silent argument as of v3.1. This will perform all available options of the version you're using.
-
-**You still need to run it as administrator. If you don't, it won't do anything and tell you to re-run it as Administrator in the log.**
-
-## Dependencies
-This is only to run the script from source, [download the exe here](https://github.com/10se1ucgo/DisableWinTracking/releases/)
-* Tested on Python 2.7
-* [wxPython](http://wxpython.org/download.php) -- GUI (Tested with wxPython=Phoenix)
-* [PyWin32](http://sourceforge.net/projects/pywin32/files/pywin32/)
-* Windows 10 (Duh)
 
 ## Methods Used
 
